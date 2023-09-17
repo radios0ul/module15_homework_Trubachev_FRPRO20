@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ex 15-3</title>
+  <style>
+    .head {
+      height: 5vh;
+      width: 95%;
+      background-color: aquamarine;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .back {
+      width: 30vw;
+      height: 90vh;
+      background-color: beige;
+      margin: 0 auto;
+      padding-top: 1.5vh;
+    }
+
+    .input {
+      height: 30px;
+      width: 40%;
+    }
+
+    .btn {
+      height: 35px;
+      width: 25%;
+    }
+
+    .chat-window {
+      display: flex;
+      flex-direction: column;
+      width: 90%;
+      height: 85%;
+      border: 2px solid white;
+      margin: 20px auto;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .message {
+      height: fit-content;
+      width: 75%;
+      padding: 10px;
+      word-wrap: break-word;
+      border: 2px solid rgb(154, 154, 154);
+      border-radius: 10px;
+    }
+
+    .user-message {
+      background-color: rgb(235, 223, 249);
+      margin: 5px 5px 0px auto;
+    }
+
+    .server-message {
+      background-color: rgb(207, 226, 226);
+      margin: 5px auto 0px 5px;
+    }
+
+    .loc-message {
+      background-color: rgb(148, 232, 232);
+      margin: 5px auto;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="back">
+
+    <div class="head">
+      <input class="input" type="text">
+      <button class="btn btn-send">Отправить</button>
+      <button class="btn location">Геолокация</button>
+    </div>
+
+    <div class="chat-window">
+    </div>
+
+  </div>
+
+  <script>
+
+    const input = document.querySelector('.input');
+    const btn = document.querySelector('.btn-send');
+    const locBtn = document.querySelector('.location');
+    const wind = document.querySelector('.chat-window');
+    const websocket = new WebSocket('wss://echo-ws-service.herokuapp.com/');
+
+    input.focus();
+
+    btn.addEventListener('click', () => {
+
+      let message = document.querySelector('.input').value;
+      let usermsg = document.createElement('div');
+
+      usermsg.innerHTML = message;
+      usermsg.classList.add('user-message');
+      usermsg.classList.add('message');
+      wind.appendChild(usermsg);
+      document.querySelector('.input').value = '';
+      websocket.send(message)
+    })
+
+    locBtn.addEventListener('click', () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const { coords } = position;
+          let loc = document.createElement('div');
+          loc.innerHTML = `<a href="https://www.openstreetmap.org/#map=18/${coords.latitude}/${coords.longitude}" target='_blank'>Your location</a>`
+          loc.classList.add('loc-message');
+          loc.classList.add('message');
+          wind.appendChild(loc);
+          scroll();
+          input.focus();
+        });
+      }
+    })
+
+    websocket.onmessage = function (evt) {
+      let srvmsg = document.createElement('div');
+      srvmsg.innerHTML = evt.data;
+      srvmsg.classList.add('server-message');
+      srvmsg.classList.add('message');
+      wind.appendChild(srvmsg);
+      scroll();
+      input.focus();
+    }
+
+    websocket.onerror = function (evt) {
+      let errmsg = document.createElement('div');
+      errmsg.innerHTML = 'ERROR:' + evt.data;
+      errmsg.classList.add('server-message');
+      errmsg.classList.add('message');
+      wind.appendChild(errmsg);
+      scroll()
+    }
+
+    function scroll() {
+      let watcher = wind.lastChild;
+      if (!watcher) return;
+      watcher.scrollIntoView({ behavior: "smooth" })
+    }
+
+  </script>
+</body>
+
+</html>
